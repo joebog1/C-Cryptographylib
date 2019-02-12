@@ -62,12 +62,12 @@ int basedigit2dec(unsigned char a)
 	if (a=='=')
 	{
 		//its the padding char, its treated as null however
-		//that is ambigious
-
+		//that is ambigious but oh well we will figure out
+		return 0;
 	}
 	if(a>'@')
 	{
-		return int(a-'A');//this is legit code i promise
+		return int(a-'A');
 	}
 	if (a>'/')
 	{
@@ -87,11 +87,6 @@ int basedigit2dec(unsigned char a)
 unsigned char decdigit2base(int a)
 {
 	//takes an int between 0-63 returns ascii unsigned character of the base64 symbol that is the value of the int
-	if (a=='=')
-	{
-		//padding character FOR NOW we return 0
-		return 0;
-	}
 	if (a<26)
 	{
 		return char(a+'A');
@@ -102,8 +97,9 @@ unsigned char decdigit2base(int a)
 	}
 	if(a<62)
 	{
-		return char(a+'0'-53);
+		return char(a+'0'-52);
 	}
+	//not sure why but when we get 61 it doesnt work
 	if (a==62)
 	{
 		return '+';
@@ -264,12 +260,9 @@ std::vector<unsigned char> byte2base(std::vector<unsigned char> v)
 {
 	//converts binary into base 64
 	//step 1 make sure the length of input s a multiple of 3
-	if (v.size()%3!=0)
+	while(v.size()%3!=0)
 	{
-		while(v.size()%3!=0)
-		{
-			v.insert(v.begin(),char(0));
-		}
+		v.insert(v.begin(),char(0));
 	}
 	std::vector<unsigned char> ans;
 	for (int i = 0; i < v.size(); i=i+3)
@@ -281,14 +274,6 @@ std::vector<unsigned char> byte2base(std::vector<unsigned char> v)
 		ans=vectorappend(ans,threebinarydigitstobase(firstbyte,secondbyte,thridbyte));
 	}
 	//there might be leading A's from size of input being shit
-	while(ans[0]=='A' && ans.size()>0)
-	{
-		ans.erase(ans.begin());
-	}
-	while(ans.size()%3!=0)
-	{
-		ans.push_back('=');//padding?
-	}
 	return ans;
 }
 

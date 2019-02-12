@@ -13,12 +13,10 @@ int main()
 	{
 		dictionary.push_back(DWord);
 	}
-	for (unsigned char i = 0; i < 64; ++i)
-	{
-		std::cout<<int(i);
-		print(threebinarydigitstobase(0,0,i));
-	}
-	//"SSdtIGtpbGxpbmcgeW0ciBicmFpbiBsaWtlIGEgcGpc1ub2VzIG00c1hyb1t=="
+	std::string hexin="49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
+	printasbase(hex2byte(hexin));
+	
+	//"SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t=="
 	//"SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
 	/*
 	for (int keysize = 2; keysize < 41; ++keysize)
