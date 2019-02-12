@@ -24,6 +24,7 @@ std::vector<unsigned char> binxor(std::vector<unsigned char> a,unsigned char b);
 std::vector<unsigned char> repeatedbinxor(std::vector<unsigned char> a,std::vector<unsigned char> key);
 void printashex(std::vector<unsigned char> v);
 void printasbase(std::vector<unsigned char> v);
+void print(std::vector<unsigned char> v);
 bool stringcheck(std::string a,std::string b);
 bool isadictionary(std::vector<unsigned char> ascii);
 unsigned char mostfrequent(std::vector<unsigned char> string);
@@ -280,23 +281,19 @@ std::vector<unsigned char> byte2base(std::vector<unsigned char> v)
 std::vector<unsigned char> fourbasedigitstobin(int a,int b,int c,int d)
 {
 	//takes 4 base numbers from 0-63 and converts them to 3 binary equlviant bytes
-	int total=d+c*64+b*64*64+a*64*64*64;
-	std::vector<unsigned char> cool;
+	std::vector<unsigned char> digits;
 	for (int i = 0; i < 4; ++i)
 	{
-		cool.push_back(0);
+		digits.push_back(0);
 	}
-	int counter=0;
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = i*8; j < i*8+7; ++j)
-		{
-			//IMPLEMENT STUFF HERE
-		}
-		counter++;
-	}
+	digits[0]=a*4+b/16;
+	digits[1]=c*4+d/16;
+	unsigned char dadgit=c*4;
+	dadgit=dadgit/32;
+	dadgit=dadgit*32;//integer rounding 2 the rescue
+	digits[2]=dadgit+d;
 	//use same method as with byte2base
-	return cool;
+	return digits;
 }
 
 
@@ -314,14 +311,14 @@ std::vector<unsigned char> base2byte(std::string base)
 		//empty input
 		return ans;
 	}
-	
+	std::cout<<base<<std::endl;
 	for(int i=0;i<base.length();i=i+4)
 	{
 		int a=basedigit2dec(base[i]);
 		int b=basedigit2dec(base[i+1]);
 		int c=basedigit2dec(base[i+2]);
 		int d=basedigit2dec(base[i+3]);
-		vectorappend(ans,fourbasedigitstobin(a,b,c,d));
+		ans=vectorappend(ans,fourbasedigitstobin(a,b,c,d));
 	}
 	//remove leading 0's
 	while(ans[0]==0 && ans.size()>1)
