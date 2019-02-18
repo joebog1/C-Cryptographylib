@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include "histogram.hpp"
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 int hexdigit2int(unsigned char a);
@@ -34,8 +35,8 @@ bool binarysearch(std::string words,std::vector<std::string> dictionary,int star
 std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
-int findnthsmallest(std::vector<double> vect,int n);
-std::vector<unsigned char> generatehistogram(int n);
+bool ishisto(std::vector<unsigned char> inputtext,histogram histo,double tol,int postol);
+
 
 int hexdigit2int(unsigned char a)
 {
@@ -289,7 +290,7 @@ std::vector<unsigned char> byte2base(std::vector<unsigned char> v)
 std::vector<unsigned char> fourbasedigitstobin(unsigned char a,unsigned char b,unsigned char c,unsigned char d)
 {
 	//takes 4 base numbers from 0-63 and converts them to 3 binary equlviant bytes
-	//the inputs are supposed to be six bits long but unsinged char allocates 8 bits for each input,
+	//the inputs are supposed to be six bits long but unsigned char allocates 8 bits for each input,
 	//this leaves 2 0's out the front that make this harder then it needs to be
 	std::vector<unsigned char> digits;
 	for (int i = 0; i < 3; ++i)
@@ -641,100 +642,17 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 	return normalisedkeysize;
 }
 
-int findnthsmallest(std::vector<double> vect,int n)
+bool ishisto(std::vector<unsigned char> inputtext,histogram histo,double tol,int postol)
 {
-	//finds the nth smallest double in the vector vect
-	//returns the position of vect where the nth smallest is
-	//create a copy of vect and sort that, pick the nth smallest
-	//find that value in the unsorted vector and pick the position where that is;
-	std::vector<double> copy=vect;
-	
-	//sort copy here, fancyer more effective sorts can be used
-	double temp;
-	for(int i=0;i<copy.size();i++)
+	//given a input and histogram, with a sutiable tolerance of how far the frequent character appears and the total number of order of frequency in wrong spots
+	//decide weather the input is actually decipherd or just gibberish
+	//the tolerance is a vlue between 0 and 1 as a per cent tollerance
+	histogram inputhisto=histogram(vector2string(inputtext));
+	int checkspassed=0;
+	for (int i = 0; i < inputhisto.characterlist.size(); ++i)
 	{
-		for(int j=i;j>0 && copy[j-1] > copy[j];j--)
-		{
-			temp=copy[j-1];
-			copy[j-1]=copy[j];
-			copy[j]=temp;
-		}
+		//if the
 	}
-	//stops bad inputs
-	if (n>vect.size())
-	{
-		n=vect.size();
-	}
-
-	double nthvalue=copy[n-1];
-	for (int i = 0; i < vect.size(); ++i)
-	{
-		if (vect[i]==nthvalue)
-		{
-			return nthvalue;
-		}
-	}
-	return 0; //think its impossable to reach here	
-}
-
-std::vector<unsigned char> generatehistogram(int n)
-{
-	//generates a vector of chars of the n most used characters in a given historgram
-	//the source file will be called histotext
-	std::ifstream source("histotext");
-	std::string line;
-	std::vector<unsigned char> charfound;
-	std::vector<int> frequency;
-	std::string allinoneline;
-	while(source >> line)
-	{
-		allinoneline=allinoneline+line+" ";
-	}
-	//start counting
-	bool found = false;
-	for (int i = 0; i < allinoneline.size(); ++i)
-	{
-		for (int j = 0; j < charfound.size(); ++j)
-		{
-			if (charfound[j]==(unsigned char) (allinoneline[i]))
-			{
-				found=true;
-				frequency[j]++;
-			}
-		}
-		if (!found)
-		{
-			charfound.push_back((unsigned char) (allinoneline[i]));
-			frequency.push_back(1);
-		}
-		found=false;
-	}
-	//sort the charfound based on how you sort frequency
-	int temp;
-	unsigned char othertemp;
-	for(int i=1;i<frequency.size();i++)
-	{
-		for(int j=i;j>0 && frequency[j-1] > frequency[j];j--)
-		{
-			temp=frequency[j-1];
-			frequency[j-1]=frequency[j];
-			frequency[j]=temp;
-			
-			othertemp=charfound[j-1];
-			charfound[j-1]=charfound[j];
-			charfound[j]=othertemp;
-		}
-	}
-	std::vector<unsigned char> nmostchar;
-	if (n>charfound.size())
-	{
-		n=charfound.size();
-	}
-	for (int i = 0; i < n; ++i)
-	{
-		nmostchar.push_back(charfound[charfound.size()-i-1]);
-	}
-	return nmostchar;
 }
 
 /*
