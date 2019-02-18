@@ -15,6 +15,13 @@ int main()
 	}
 	histogram histo=histogram();
 	//this should generate histogram based off of histotext
-	
+	for (int i = 0; i < histo.characterlist.size(); ++i)
+	{
+		std::cout<<histo.characterlist[i]<<" ";
+	}
+	for (int i = 0; i < histo.nfreq.size(); ++i)
+	{
+		std::cout<<histo.nfreq[i]<<" ";
+	}
 	return 0;
 }

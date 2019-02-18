@@ -35,7 +35,7 @@ bool binarysearch(std::string words,std::vector<std::string> dictionary,int star
 std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
-bool ishisto(std::vector<unsigned char> inputtext,histogram histo,double tol,int postol);
+bool ishisto(std::vector<unsigned char> inputtext,histogram histo); //not implemented yet
 
 
 int hexdigit2int(unsigned char a)
@@ -642,17 +642,20 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 	return normalisedkeysize;
 }
 
-bool ishisto(std::vector<unsigned char> inputtext,histogram histo,double tol,int postol)
+bool ishisto(std::vector<unsigned char> inputtext,histogram histo)
 {
 	//given a input and histogram, with a sutiable tolerance of how far the frequent character appears and the total number of order of frequency in wrong spots
 	//decide weather the input is actually decipherd or just gibberish
 	//the tolerance is a vlue between 0 and 1 as a per cent tollerance
 	histogram inputhisto=histogram(vector2string(inputtext));
-	int checkspassed=0;
+	//if the number of checkspassed is less then numbercorrect
 	for (int i = 0; i < inputhisto.characterlist.size(); ++i)
 	{
-		//if the
+		//if the character counts frequency are =
+		//then their differnece is no more then n times sqrt(average)
+		
 	}
+	return false;
 }
 
 /*
