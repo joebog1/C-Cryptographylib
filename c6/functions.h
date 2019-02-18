@@ -35,7 +35,7 @@ std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
 int findnthsmallest(std::vector<double> vect,int n);
-std::vector<unsinged char> generatehistogram(int n);
+std::vector<unsigned char> generatehistogram(int n);
 
 int hexdigit2int(unsigned char a)
 {
@@ -647,12 +647,25 @@ int findnthsmallest(std::vector<double> vect,int n)
 	//returns the position of vect where the nth smallest is
 	//create a copy of vect and sort that, pick the nth smallest
 	//find that value in the unsorted vector and pick the position where that is;
-	std::vector<double> copy;
-	std::sort(vect.begin(),vect.end(),copy);
+	std::vector<double> copy=vect;
+	
+	//sort copy here, fancyer more effective sorts can be used
+	double temp;
+	for(int i=0;i<copy.size();i++)
+	{
+		for(int j=i;j>0 && copy[j-1] > copy[j];j--)
+		{
+			temp=copy[j-1];
+			copy[j-1]=copy[j];
+			copy[j]=temp;
+		}
+	}
+	//stops bad inputs
 	if (n>vect.size())
 	{
-		n=vect.size()
+		n=vect.size();
 	}
+
 	double nthvalue=copy[n-1];
 	for (int i = 0; i < vect.size(); ++i)
 	{
@@ -664,7 +677,7 @@ int findnthsmallest(std::vector<double> vect,int n)
 	return 0; //think its impossable to reach here	
 }
 
-std::vector<unsinged char> generatehistogram(int n)
+std::vector<unsigned char> generatehistogram(int n)
 {
 	//generates a vector of chars of the n most used characters in a given historgram
 	//the source file will be called histotext
@@ -672,28 +685,56 @@ std::vector<unsinged char> generatehistogram(int n)
 	std::string line;
 	std::vector<unsigned char> charfound;
 	std::vector<int> frequency;
+	std::string allinoneline;
 	while(source >> line)
 	{
-
-		bool found = false;
-		for (int i = 0; i < input.size(); ++i)
+		allinoneline=allinoneline+line+" ";
+	}
+	//start counting
+	bool found = false;
+	for (int i = 0; i < allinoneline.size(); ++i)
+	{
+		for (int j = 0; j < charfound.size(); ++j)
 		{
-			for (int j = 0; j < charfound.size(); ++j)
+			if (charfound[j]==(unsigned char) (allinoneline[i]))
 			{
-				if (charfound[j]==input[i])
-				{
-					found=true;
-					frequency[j]++;
-				}
+				found=true;
+				frequency[j]++;
 			}
-			if (!found)
-			{
-				charfound.push_back(input[i]);
-				frequency.push_back(1);
-			}
-			found=false;
+		}
+		if (!found)
+		{
+			charfound.push_back((unsigned char) (allinoneline[i]));
+			frequency.push_back(1);
+		}
+		found=false;
+	}
+	//sort the charfound based on how you sort frequency
+	int temp;
+	unsigned char othertemp;
+	for(int i=1;i<frequency.size();i++)
+	{
+		for(int j=i;j>0 && frequency[j-1] > frequency[j];j--)
+		{
+			temp=frequency[j-1];
+			frequency[j-1]=frequency[j];
+			frequency[j]=temp;
+			
+			othertemp=charfound[j-1];
+			charfound[j-1]=charfound[j];
+			charfound[j]=othertemp;
 		}
 	}
+	std::vector<unsigned char> nmostchar;
+	if (n>charfound.size())
+	{
+		n=charfound.size();
+	}
+	for (int i = 0; i < n; ++i)
+	{
+		nmostchar.push_back(charfound[charfound.size()-i-1]);
+	}
+	return nmostchar;
 }
 
 /*

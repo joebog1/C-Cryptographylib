@@ -13,12 +13,17 @@ int main()
 	{
 		dictionary.push_back(DWord);
 	}
-
+	std::vector<unsigned char> histogram=generatehistogram(10);
+	for (int i = 0; i < 10; ++i)
+	{
+		std::cout<<histogram[i]<<" ";
+	}
+	std::cout<<""<<std::endl;
 	while(zafile >> bvaseinput)
 	{
 		//input is a string of base64 characters
 		std::vector<double> hammingdistances=guesskeylength(base2byte(bvaseinput));
-		
+
 	}
 
 	return 0;
