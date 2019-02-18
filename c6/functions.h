@@ -17,7 +17,7 @@ std::vector<unsigned char> hex2byte(std::string hex);
 std::vector<unsigned char> byte2hex(std::vector<unsigned char> v);
 std::vector<unsigned char> threebinarydigitstobase(unsigned char a,unsigned char b,unsigned char c);
 std::vector<unsigned char> byte2base(std::vector<unsigned char> v);
-std::vector<unsigned char> fourbasedigitstobin(int a,int b,int c,int d);
+std::vector<unsigned char> fourbasedigitstobin(unsigned char a,unsigned char b,unsigned char c,unsigned char d);
 std::vector<unsigned char> base2byte(std::string base);
 std::vector<unsigned char> binxor(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<unsigned char> binxor(std::vector<unsigned char> a,unsigned char b);
@@ -33,7 +33,9 @@ bool lowerorhigher(std::string a,std::string b);
 bool binarysearch(std::string words,std::vector<std::string> dictionary,int start,int end);
 std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
-
+std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
+int findnthsmallest(std::vector<double> vect,int n);
+std::vector<unsinged char> generatehistogram(int n);
 
 int hexdigit2int(unsigned char a)
 {
@@ -63,8 +65,13 @@ int basedigit2dec(unsigned char a)
 	if (a=='=')
 	{
 		//its the padding char, its treated as null however
-		//that is ambigious but oh well we will figure out
+		//that is ambigious but oh well we will figure out what its supposed to do
 		return 0;
+	}
+	if(a>='a')
+	{
+		//case where input>26<52
+		return int(a-'a')+26;
 	}
 	if(a>'@')
 	{
@@ -82,7 +89,8 @@ int basedigit2dec(unsigned char a)
 	{
 		return 62;
 	}
-
+ 	//not sure how u got here
+ 	return 0;
 }
 
 unsigned char decdigit2base(int a)
@@ -199,7 +207,7 @@ std::vector<unsigned char> byte2hex(std::vector<unsigned char> v)
 		ans.push_back(decdigit2hex(dec));
 	}
 	//remove leading 0's
-	while(ans[0]=='0' && ans.size()>0)
+	while(ans[0]==0 && ans.size()>0)
 	{
 		ans.erase(ans.begin());
 	}
@@ -263,7 +271,7 @@ std::vector<unsigned char> byte2base(std::vector<unsigned char> v)
 	//step 1 make sure the length of input s a multiple of 3
 	while(v.size()%3!=0)
 	{
-		v.insert(v.begin(),char(0));
+		v.push_back(0);
 	}
 	std::vector<unsigned char> ans;
 	for (int i = 0; i < v.size(); i=i+3)
@@ -278,21 +286,19 @@ std::vector<unsigned char> byte2base(std::vector<unsigned char> v)
 	return ans;
 }
 
-std::vector<unsigned char> fourbasedigitstobin(int a,int b,int c,int d)
+std::vector<unsigned char> fourbasedigitstobin(unsigned char a,unsigned char b,unsigned char c,unsigned char d)
 {
 	//takes 4 base numbers from 0-63 and converts them to 3 binary equlviant bytes
+	//the inputs are supposed to be six bits long but unsinged char allocates 8 bits for each input,
+	//this leaves 2 0's out the front that make this harder then it needs to be
 	std::vector<unsigned char> digits;
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		digits.push_back(0);
 	}
 	digits[0]=a*4+b/16;
-	digits[1]=c*4+d/16;
-	unsigned char dadgit=c*4;
-	dadgit=dadgit/32;
-	dadgit=dadgit*32;//integer rounding 2 the rescue
-	digits[2]=dadgit+d;
-	//use same method as with byte2base
+	digits[1]=b*16+c/4;
+	digits[2]=c*64+d;//uses how the c++ handles overflow(rather how it doesnt handle overflow)
 	return digits;
 }
 
@@ -300,8 +306,10 @@ std::vector<unsigned char> fourbasedigitstobin(int a,int b,int c,int d)
 std::vector<unsigned char> base2byte(std::string base)
 {
 	//read 4 chars at a time, generate 3 chars equal to 4 base
+	int deletepadding=0;
 	while(base.length()%4!=0)
 	{
+		deletepadding++;//to delete padded 0's after
 		base=base+'=';//i gotta accept this stupid method of padding
 	}
 	//ad my own padding
@@ -311,19 +319,14 @@ std::vector<unsigned char> base2byte(std::string base)
 		//empty input
 		return ans;
 	}
-	std::cout<<base<<std::endl;
+
 	for(int i=0;i<base.length();i=i+4)
 	{
-		int a=basedigit2dec(base[i]);
-		int b=basedigit2dec(base[i+1]);
-		int c=basedigit2dec(base[i+2]);
-		int d=basedigit2dec(base[i+3]);
+		unsigned char a=basedigit2dec(base[i]);
+		unsigned char b=basedigit2dec(base[i+1]);
+		unsigned char c=basedigit2dec(base[i+2]);
+		unsigned char d=basedigit2dec(base[i+3]);
 		ans=vectorappend(ans,fourbasedigitstobin(a,b,c,d));
-	}
-	//remove leading 0's
-	while(ans[0]==0 && ans.size()>1)
-	{
-		ans.erase(ans.begin());
 	}
 	return ans;
 }
@@ -599,6 +602,99 @@ int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b)
 	return ans;
 }
 
+
+std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
+{
+	//guesses the key by finding the smallest normalsed hamming distance for each keysize key
+	//assumes key length to be more then 1 but less then 41
+	//well returns a vector of 41 with each normalised hamming distance for each length
+	std::vector<double> normalisedkeysize;
+	for (int keysize = 2; keysize < 41; ++keysize)
+	{
+	//run through the string in lengths of keysize,
+	//grab each keysize of bytes, what if the key isnt a multiple of keysize?
+		std::vector<unsigned char> firstbyte;
+		std::vector<unsigned char> secondbyte;
+		if (keysize*2>cipher.size())
+		{
+			//the key size is bigger then half the encrtypted test
+			//how do we parse it
+			//best to just return the vector of normalised hamming lengths
+			return normalisedkeysize;
+		}
+		//we can now assume that keysize<=cipher.size() 
+		//this grabs the first keysize bytes and compares them
+		//not the most relaible method, better to do this through all possiable combonations
+		//of keysize pairs and pick the max
+		for (int i = 0; i < keysize*2; ++i)
+		{
+			if (i>keysize)
+			{
+				secondbyte.push_back(cipher[i]);
+			}else
+			{
+				firstbyte.push_back(cipher[i]);
+			}
+		}
+		normalisedkeysize.push_back(double(hamming(firstbyte,secondbyte))/keysize);
+	}
+	return normalisedkeysize;
+}
+
+int findnthsmallest(std::vector<double> vect,int n)
+{
+	//finds the nth smallest double in the vector vect
+	//returns the position of vect where the nth smallest is
+	//create a copy of vect and sort that, pick the nth smallest
+	//find that value in the unsorted vector and pick the position where that is;
+	std::vector<double> copy;
+	std::sort(vect.begin(),vect.end(),copy);
+	if (n>vect.size())
+	{
+		n=vect.size()
+	}
+	double nthvalue=copy[n-1];
+	for (int i = 0; i < vect.size(); ++i)
+	{
+		if (vect[i]==nthvalue)
+		{
+			return nthvalue;
+		}
+	}
+	return 0; //think its impossable to reach here	
+}
+
+std::vector<unsinged char> generatehistogram(int n)
+{
+	//generates a vector of chars of the n most used characters in a given historgram
+	//the source file will be called histotext
+	std::ifstream source("histotext");
+	std::string line;
+	std::vector<unsigned char> charfound;
+	std::vector<int> frequency;
+	while(source >> line)
+	{
+
+		bool found = false;
+		for (int i = 0; i < input.size(); ++i)
+		{
+			for (int j = 0; j < charfound.size(); ++j)
+			{
+				if (charfound[j]==input[i])
+				{
+					found=true;
+					frequency[j]++;
+				}
+			}
+			if (!found)
+			{
+				charfound.push_back(input[i]);
+				frequency.push_back(1);
+			}
+			found=false;
+		}
+	}
+}
 
 /*
 Base 64 Index table:
