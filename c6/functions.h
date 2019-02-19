@@ -1,18 +1,18 @@
+#ifndef FUNCTIONS_H
+#define FUNCTIONS_H
 #include <iostream>
 #include <vector>
 #include <math.h>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include "histogram.hpp"
-#ifndef FUNCTIONS_H
-#define FUNCTIONS_H
+class histogram; //prototype class to shut up comipler
 int hexdigit2int(unsigned char a);
 unsigned char decdigit2hex(int val);
 int basedigit2dec(unsigned char a);
 unsigned char decdigit2base(int a);
 std::vector<unsigned char> vectorappend(std::vector<unsigned char> a,std::vector<unsigned char> b);
-int maxv(std::vector<int> v);
+int maxv(std::vector<int> v); //depricated, histogram is allways sorted
 std::vector<unsigned char> dec2bin(int des,int length);
 std::vector<unsigned char> hex2byte(std::string hex);
 std::vector<unsigned char> byte2hex(std::vector<unsigned char> v);
@@ -36,6 +36,140 @@ std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
 bool ishisto(std::vector<unsigned char> inputtext,histogram histo); //not implemented yet
+
+
+
+
+class histogram
+{
+public:
+	~histogram();
+	histogram();//will generate the entire histogram from this
+	histogram(std::string text);//will generate the entire histogram from string	
+	int findnthsmallest(std::vector<double> vect,int n);
+	std::vector<unsigned char> generatehistogram(int n);
+	std::vector<unsigned char> characterlist; //list will be sorted such that most frequent appears first
+	std::vector<int> freq; //frequency[i]=number of times characterlist[i] appears in the given histogram
+	std::vector<double> nfreq; //nfreq[i]=frequency[i]/sum(frequency)
+};
+
+histogram::~histogram()
+{
+
+}//default deconstructor
+
+histogram::histogram()
+{
+	//assume file to be convert is called histotext
+	std::ifstream source("histotext");
+	std::string allinoneline;
+	std::vector<unsigned char> charfound;
+	std::vector<int> frequency;
+	std::string line;
+	while(source >> line)
+	{
+		allinoneline=allinoneline+line+" ";
+	}
+	//start counting
+	bool found = false;
+	for (int i = 0; i < allinoneline.size(); ++i)
+	{
+		for (int j = 0; j < charfound.size(); ++j)
+		{
+			if (charfound[j]==(unsigned char) (allinoneline[i]))
+			{
+				found=true;
+				frequency[j]++;
+			}
+		}
+		if (!found)
+		{
+			charfound.push_back((unsigned char) (allinoneline[i]));
+			frequency.push_back(1);
+		}
+		found=false;
+	}
+	//sort the charfound based on how you sort frequency
+	int temp;
+	unsigned char othertemp;
+	for(int i=1;i<frequency.size();i++)
+	{
+		for(int j=i;j>0 && frequency[j-1] > frequency[j];j--)
+		{
+			temp=frequency[j-1];
+			frequency[j-1]=frequency[j];
+			frequency[j]=temp;
+			
+			othertemp=charfound[j-1];
+			charfound[j-1]=charfound[j];
+			charfound[j]=othertemp;
+		}
+	}
+	//frequency is sorted and so it charfound
+	characterlist=charfound;
+	freq=frequency;
+	for (int i = 0; i < characterlist.size(); ++i)
+	{
+		nfreq.push_back((double)frequency[i]/allinoneline.length());
+	}
+	return;
+}
+
+histogram::histogram(std::string text)
+{
+	//genreates histogram from string
+	std::vector<unsigned char> charfound;
+	std::vector<int> frequency;
+	std::string allinoneline=text;//im lazy
+	//start counting
+	bool found = false;
+	for (int i = 0; i < allinoneline.size(); ++i)
+	{
+		for (int j = 0; j < charfound.size(); ++j)
+		{
+			if (charfound[j]==(unsigned char) (allinoneline[i]))
+			{
+				found=true;
+				frequency[j]++;
+			}
+		}
+		if (!found)
+		{
+			charfound.push_back((unsigned char) (allinoneline[i]));
+			frequency.push_back(1);
+		}
+		found=false;
+	}
+	//sort the charfound based on how you sort frequency
+	int temp;
+	unsigned char othertemp;
+	for(int i=1;i<frequency.size();i++)
+	{
+		for(int j=i;j>0 && frequency[j-1] > frequency[j];j--)
+		{
+			temp=frequency[j-1];
+			frequency[j-1]=frequency[j];
+			frequency[j]=temp;
+			
+			othertemp=charfound[j-1];
+			charfound[j-1]=charfound[j];
+			charfound[j]=othertemp;
+		}
+	}
+	//frequency is sorted and so it charfound
+	characterlist=charfound;
+	freq=frequency;
+	for (int i = 0; i < characterlist.size(); ++i)
+	{
+		nfreq.push_back((double)frequency[i]/allinoneline.length());
+	}
+	return;
+}
+
+
+
+
+
 
 
 int hexdigit2int(unsigned char a)
@@ -127,7 +261,7 @@ std::vector<unsigned char> vectorappend(std::vector<unsigned char> a,std::vector
 	return a;
 }
 
-int maxv(std::vector<int> v)
+int maxv(std::vector<int> v) //pretty depricated thanks to histogam.hpp
 {
 	//returns the index of the max value of a vector of ints
 	//0 otherwise
@@ -649,11 +783,16 @@ bool ishisto(std::vector<unsigned char> inputtext,histogram histo)
 	//the tolerance is a vlue between 0 and 1 as a per cent tollerance
 	histogram inputhisto=histogram(vector2string(inputtext));
 	//if the number of checkspassed is less then numbercorrect
-	for (int i = 0; i < inputhisto.characterlist.size(); ++i)
+	int character=histo.characterlist.size()-1;
+	for (int i = inputhisto.characterlist.size()-1; i >-1 ; i--)
 	{
 		//if the character counts frequency are =
 		//then their differnece is no more then n times sqrt(average)
-		
+		if(inputhisto.nfreq[i]>=histo.nfreq[character])
+		{
+
+		}
+		character--;
 	}
 	return false;
 }
