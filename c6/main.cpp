@@ -1,4 +1,3 @@
-#include "histogram.hpp"
 #include "functions.h"
 int main()
 {
@@ -58,13 +57,13 @@ int main()
 	*/
 	//now if we want to find the keysize with the minimum length
 	//orderofkeys[0]+1 should be the smallest nromalised hamming distance using that keylength
-	for (int i = 0; i < copy.size(); ++i)
-	{
-		std::cout<<keylengths[orderofkeys[i]]<<" keylength= "<<orderofkeys[i]+1<<std::endl;
-	}
 	for (int i = 0; i < orderofkeys.size(); ++i)
 	{
 		int keyl=orderofkeys[i]+1;
-		//break up
+		/*
+		break up the cipher text based on the assumed keylength
+		then break using the histogram 	
+		*/
+		
 	}
 }

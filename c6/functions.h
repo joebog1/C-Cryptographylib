@@ -35,8 +35,7 @@ bool binarysearch(std::string words,std::vector<std::string> dictionary,int star
 std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
-bool ishisto(std::vector<unsigned char> inputtext,histogram histo); //not implemented yet
-
+double histodifference(std::vector<unsigned char> decodedmsg,histogram histo);
 
 
 
@@ -141,6 +140,7 @@ histogram::histogram(std::string text)
 		found=false;
 	}
 	//sort the charfound based on how you sort frequency
+	//sort big to small
 	int temp;
 	unsigned char othertemp;
 	for(int i=1;i<frequency.size();i++)
@@ -777,25 +777,53 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 	return normalisedkeysize;
 }
 
-bool ishisto(std::vector<unsigned char> inputtext,histogram histo)
+double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)
 {
-	//given a input and histogram, with a sutiable tolerance of how far the frequent character appears and the total number of order of frequency in wrong spots
-	//decide weather the input is actually decipherd or just gibberish
-	//the tolerance is a vlue between 0 and 1 as a per cent tollerance
-	histogram inputhisto=histogram(vector2string(inputtext));
-	//if the number of checkspassed is less then numbercorrect
-	int character=histo.characterlist.size()-1;
-	for (int i = inputhisto.characterlist.size()-1; i >-1 ; i--)
+	//given a supposedly decrypted msg, genreate a histogram and
+	//return the sum of the differences of nfreq
+	histogram decrypt=histogram(vector2string(decodedmsg));
+	double ans=0;
+	//lets assume the histogram frequency is unlikely to be
+	//the same as the histograms if the output is not the plaintext
+	int diff=(histo.nfreq.size()-decrypt.nfreq.size());
+	diff=std::abs(diff);
+	//pad the difference of 0's to the smaller value
+	if (diff!=0)
 	{
-		//if the character counts frequency are =
-		//then their differnece is no more then n times sqrt(average)
-		if(inputhisto.nfreq[i]>=histo.nfreq[character])
+		if (histo.nfreq.size()>decrypt.nfreq.size())
 		{
-
+			//padd differnece onto decrpt.nfreq
+			for (int i = 0; i < diff; ++i)
+			{
+				decrypt.nfreq.insert(decrypt.nfreq.begin(),0.0);
+			}
 		}
-		character--;
+		else
+		{
+			// pad into histo.nfreq, also pad to front as the lowest is at front
+			for (int i = 0; i < diff; ++i)
+			{
+				histo.nfreq.insert(histo.nfreq.begin(),0);
+			}
+		}
 	}
-	return false;
+	//now that we are convinced that they are of the same size
+	//we can check element by element
+	for (int i = 0; i <histo.nfreq.size() ; ++i)
+	{
+		//c++ doesnt like abs when the inputs are doubles for some reason
+		double sum=0;
+		if (histo.nfreq[i]>decrypt.nfreq[i])
+		{
+			sum=histo.nfreq[i]-decrypt.nfreq[i];
+		}
+		else
+		{
+			sum=decrypt.nfreq[i];
+		}
+		ans=ans+sum;
+	}
+	return ans;
 }
 
 /*
