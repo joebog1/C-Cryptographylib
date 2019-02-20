@@ -23,10 +23,15 @@ int main()
 	std::vector<unsigned char> binaryinput=base2byte(cipher);
 	std::vector<double> keylengths= guesskeylength(binaryinput);
 	std::vector<int> orderofkeys;
+	for (int i = 0; i < keylengths.size(); ++i)
+	{
+		orderofkeys.push_back(i);
+	}
 	//orderofkeys[i] is the order in the sorted list such that orderofkeys[0] is min
 	//and orderofkeys[orderofkeys.size()-1] is max.
 	std::vector<double> copy=keylengths;
 	double temp;
+	int itemp;
 	for(int i=1;i<copy.size();i++)
 	{
 		for(int j=i;j>0 && copy[j-1] > copy[j];j--)
@@ -34,22 +39,32 @@ int main()
 			temp=copy[j-1];
 			copy[j-1]=copy[j];
 			copy[j]=temp;
+
+			itemp=orderofkeys[j-1];
+			orderofkeys[j-1]=orderofkeys[j];
+			orderofkeys[j]=itemp;
 		}
 	}
-	/*
-		go into keylenghts[i], find the index of copy such that copy[j]=keylenghts[i], 
-		orderofkeys[i]=j
+	/*keylenghts[i]=j, j is the normalised hamming distance of 2
+	keylengths of length j, the keylength is i+1 as you cant have a keylength of 0;
+	we want a sorted keylengths such that we can both find the smallest hamming
+	distance and get the value of i in a not garbage complexity.
+	we have a copy of keylengths that has been sorted.
+	we need to have an array of indexes of key length (by extension that would be an array of key length values)
+	such that we can read it via keylenghts[oderofkeys[i]]=j
+	so oderofkeys[i]+1 is keylength and j is hopefully the smallest hamming distance
+	go into keylenghts[i], find the index of copy such that copy[j]=keylenghts[i], 
+	orderofkeys[i]=j
 	*/
-	for (int i = 0; i < keylengths.size(); ++i)
+	//now if we want to find the keysize with the minimum length
+	//orderofkeys[0]+1 should be the smallest nromalised hamming distance using that keylength
+	for (int i = 0; i < copy.size(); ++i)
 	{
-		for (int j = 0; j < copy.size(); ++j)
-		{
-			if (copy[j]==keylengths[i])
-			{
-				orderofkeys.push_back(j);
-			}
-			//now since copy was =keylengths this should be true every time
-		}
+		std::cout<<keylengths[orderofkeys[i]]<<" keylength= "<<orderofkeys[i]+1<<std::endl;
 	}
-	
+	for (int i = 0; i < orderofkeys.size(); ++i)
+	{
+		int keyl=orderofkeys[i]+1;
+		//break up
+	}
 }

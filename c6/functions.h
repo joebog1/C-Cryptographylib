@@ -744,7 +744,7 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 	//assumes key length to be more then 1 but less then 41
 	//well returns a vector of 41 with each normalised hamming distance for each length
 	std::vector<double> normalisedkeysize;
-	for (int keysize = 2; keysize < 41; ++keysize)
+	for (int keysize = 1; keysize < 41; ++keysize)
 	{
 	//run through the string in lengths of keysize,
 	//grab each keysize of bytes, what if the key isnt a multiple of keysize?
@@ -763,10 +763,11 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 		//of keysize pairs and pick the max
 		for (int i = 0; i < keysize*2; ++i)
 		{
-			if (i>keysize)
+			if (i>=keysize)
 			{
 				secondbyte.push_back(cipher[i]);
-			}else
+			}
+			else
 			{
 				firstbyte.push_back(cipher[i]);
 			}
