@@ -36,7 +36,7 @@ std::vector<unsigned char> string2vector(std::string string);
 int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
 double histodifference(std::vector<unsigned char> decodedmsg,histogram histo);
-
+std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,histogram histo);
 
 
 class histogram
@@ -45,8 +45,6 @@ public:
 	~histogram();
 	histogram();//will generate the entire histogram from this
 	histogram(std::string text);//will generate the entire histogram from string	
-	int findnthsmallest(std::vector<double> vect,int n);
-	std::vector<unsigned char> generatehistogram(int n);
 	std::vector<unsigned char> characterlist; //list will be sorted such that most frequent appears first
 	std::vector<int> freq; //frequency[i]=number of times characterlist[i] appears in the given histogram
 	std::vector<double> nfreq; //nfreq[i]=frequency[i]/sum(frequency)
@@ -825,6 +823,23 @@ double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)
 	}
 	return ans;
 }
+
+std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,histogram histo)
+{
+	//breaks a cipher (assumed ascii binary) that we know to be xord by a single char
+	//usefull helper function for what will be BreakRepeatedKeyXor
+	std::vector<double> hacc;//will hold the result of histodifference for each char in histogram
+	histogram cipherhisto=histogram(vector2string(cipher));
+	//given the most common char of cipher a and most common histogram char h, we assume
+	//that a^key=h, hence key=a^h
+	for (int i = 0; i < 10 && i<cipherhisto.characterlist.size(); ++i)
+	{
+		//we will use the 10 most popluar chars of histo
+		unsigned char key=cipherhisto.characterlist[cipherhisto.characterlist.size()-1-i]^histo.characterlist[histo.characterlist.size()-1-i];
+		
+	}
+}
+
 
 /*
 Base 64 Index table:

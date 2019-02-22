@@ -64,6 +64,29 @@ int main()
 		break up the cipher text based on the assumed keylength
 		then break using the histogram 	
 		*/
+		std::vector<std::vector<unsigned char> > vecOfChar;
+		/*
+		lets parittion the set of cipher characters
+		based on the position it appears in its sequence
+		if we have a keylength of keyl then
+		cipher[n*keyl+c] where c will be each colmnum
+		and n will be the row, n*keyl<=binaryinput.size()
+		hopefully we should be able to access specifc partitions
+		via vectorOfChar[c][n]
+		*/
+		std::vector<unsigned char> thekey;//will hold the key by the end
+		int c=0;
+		int n=0;
+		std::vector<unsigned char> filler;
+		for (int i = 0; i < keyl; ++i)
+		{
+			//push the keylengths worth of vectors (set up coloums of vecOfChar)
+			vecOfChar.push_back(filler);
+		}
+		for (int i = 0; i < binaryinput.size(); ++i)
+		{
+			vecOfChar[i%keyl].push_back(binaryinput[i]);
+		}
 		
 	}
 }
