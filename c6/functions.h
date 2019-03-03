@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <locale>
 class histogram; //prototype class to shut up comipler
 int hexdigit2int(unsigned char a);
 unsigned char decdigit2hex(int val);
@@ -26,6 +27,7 @@ std::vector<unsigned char> repeatedbinxor(std::vector<unsigned char> a,std::vect
 void printashex(std::vector<unsigned char> v);
 void printasbase(std::vector<unsigned char> v);
 void print(std::vector<unsigned char> v);
+void print(std::vector<double> v);
 bool stringcheck(std::string a,std::string b);
 bool isadictionary(std::vector<unsigned char> ascii);
 unsigned char mostfrequent(std::vector<unsigned char> string);
@@ -37,6 +39,7 @@ int hamming(std::vector<unsigned char> a,std::vector<unsigned char> b);
 std::vector<double> guesskeylength(std::vector<unsigned char> cipher);
 double histodifference(std::vector<unsigned char> decodedmsg,histogram histo);
 std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,histogram histo);
+std::vector<unsigned char> BreakRepeatedKeyXor(std::vector<unsigned char> binaryinput,histogram histo);
 
 
 class histogram
@@ -115,6 +118,8 @@ histogram::histogram()
 histogram::histogram(std::string text)
 {
 	//genreates histogram from string
+	//for the love of god can we make everything lowercase, it really messes up the histogram otherwise
+
 	std::vector<unsigned char> charfound;
 	std::vector<int> frequency;
 	std::string allinoneline=text;//im lazy
@@ -431,7 +436,7 @@ std::vector<unsigned char> fourbasedigitstobin(unsigned char a,unsigned char b,u
 	}
 	digits[0]=a*4+b/16;
 	digits[1]=b*16+c/4;
-	digits[2]=c*64+d;//uses how the c++ handles overflow(rather how it doesnt handle overflow)
+	digits[2]=c*64+d; //uses how the c++ handles overflow(rather how it doesnt handle overflow)
 	return digits;
 }
 
@@ -532,6 +537,18 @@ void print(std::vector<unsigned char> v)
 	}
 	std::cout<<""<<std::endl;
 }
+
+void print(std::vector<double> v)
+{
+	//prints vector of doubles, //overload shud be ok
+	for (int i = 0; i < v.size(); i++)
+	{
+		std::cout<<v[i];
+	}
+	std::cout<<""<<std::endl;
+}
+
+
 
 bool stringcheck(std::string a,std::string b)
 {
@@ -755,7 +772,7 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 			//best to just return the vector of normalised hamming lengths
 			return normalisedkeysize;
 		}
-		//we can now assume that keysize<=cipher.size() 
+		//we can now assume that keysize*2<=cipher.size() 
 		//this grabs the first keysize bytes and compares them
 		//not the most relaible method, better to do this through all possiable combonations
 		//of keysize pairs and pick the max
@@ -775,8 +792,9 @@ std::vector<double> guesskeylength(std::vector<unsigned char> cipher)
 	return normalisedkeysize;
 }
 
-double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)
+double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)//currently doesnt really work
 {
+	//curretly is a peice of garbage that says gibberish is the histogram
 	//given a supposedly decrypted msg, genreate a histogram and
 	//return the sum of the differences of nfreq
 	histogram decrypt=histogram(vector2string(decodedmsg));
@@ -786,23 +804,22 @@ double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)
 	int diff=(histo.nfreq.size()-decrypt.nfreq.size());
 	diff=std::abs(diff);
 	//pad the difference of 0's to the smaller value
-	if (diff!=0)
+	if (histo.nfreq.size()>decrypt.nfreq.size())
 	{
-		if (histo.nfreq.size()>decrypt.nfreq.size())
+		//padd differnece onto decrpt.nfreq
+		for (int i = 0; i < diff; ++i)
 		{
-			//padd differnece onto decrpt.nfreq
-			for (int i = 0; i < diff; ++i)
-			{
-				decrypt.nfreq.insert(decrypt.nfreq.begin(),0.0);
-			}
+			decrypt.nfreq.insert(decrypt.nfreq.begin(),0.0);
+			decrypt.characterlist.insert(decrypt.characterlist.begin(),(char) 0);//adds null char to characterlist				
 		}
-		else
+	}
+	else
+	{
+		// pad into histo.nfreq, also pad to front as the lowest is at front
+		for (int i = 0; i < diff; ++i)
 		{
-			// pad into histo.nfreq, also pad to front as the lowest is at front
-			for (int i = 0; i < diff; ++i)
-			{
-				histo.nfreq.insert(histo.nfreq.begin(),0);
-			}
+			histo.nfreq.insert(histo.nfreq.begin(),0);
+			histo.characterlist.insert(histo.characterlist.begin(),(char) 0);
 		}
 	}
 	//now that we are convinced that they are of the same size
@@ -811,15 +828,20 @@ double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)
 	{
 		//c++ doesnt like abs when the inputs are doubles for some reason
 		double sum=0;
-		if (histo.nfreq[i]>decrypt.nfreq[i])
+		if (histo.characterlist[i]!=decrypt.characterlist[i])
 		{
-			sum=histo.nfreq[i]-decrypt.nfreq[i];
+			if (histo.nfreq[i]>decrypt.nfreq[i])
+			{
+				sum=histo.nfreq[i]-decrypt.nfreq[i];
+				sum*=i;
+			}
+			else
+			{
+				sum=decrypt.nfreq[i]-histo.nfreq[i];
+				sum*=i;
+			}
+			ans=ans+sum;
 		}
-		else
-		{
-			sum=decrypt.nfreq[i];
-		}
-		ans=ans+sum;
 	}
 	return ans;
 }
@@ -832,14 +854,131 @@ std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,
 	histogram cipherhisto=histogram(vector2string(cipher));
 	//given the most common char of cipher a and most common histogram char h, we assume
 	//that a^key=h, hence key=a^h
-	for (int i = 0; i < 10 && i<cipherhisto.characterlist.size(); ++i)
+	std::vector<unsigned char> solved=cipher;
+	unsigned char key;
+	for (int i = 0; i < 15 && i<cipherhisto.characterlist.size(); ++i)
 	{
 		//we will use the 10 most popluar chars of histo
 		unsigned char key=cipherhisto.characterlist[cipherhisto.characterlist.size()-1-i]^histo.characterlist[histo.characterlist.size()-1-i];
+		std::vector<unsigned char> solved=cipher;
+		for (int j = 0; j < solved.size(); ++j)
+		{
+			solved[j]=solved[j]^key;
+		}
+		print(solved);
+		std::cout<<histodifference(solved,histo)<<std::endl;
+		hacc.push_back(histodifference(solved,histo));
+	}
+	//find the result that gave the closest histogtam and use that
+	int index=0;
+	double temp=hacc[0];
+	for (int i = 1; i < hacc.size(); ++i)
+	{
+		if (hacc[i]<temp)
+		{
+			temp=hacc[i];
+			index=i;
+		}
+	}
+	//could be improved for perfomanace and readability but good enough for a first attempt
+	key=cipherhisto.characterlist[cipherhisto.characterlist.size()-1-index]^histo.characterlist[histo.characterlist.size()-1-index];
+	for (int j = 0; j < solved.size(); ++j)
+	{
+		solved[j]=solved[j]^key;
+	}
+	return solved;
+}
+
+std::vector<unsigned char> BreakRepeatedKeyXor(std::vector<unsigned char> binaryinput,histogram histo)
+{
+	//attempts to break a repeatedkeyXor cipher, also assumes input is in binary, not base64
+	std::vector<double> keylengths= guesskeylength(binaryinput);
+	std::vector<int> orderofkeys;
+	for (int i = 0; i < keylengths.size(); ++i)
+	{
+		orderofkeys.push_back(i);
+	}
+	//orderofkeys[i] is the order in the sorted list such that orderofkeys[0] is min
+	//and orderofkeys[orderofkeys.size()-1] is max.
+	std::vector<double> copy=keylengths;
+	double temp;
+	int itemp;
+	for(int i=1;i<copy.size();i++)
+	{
+		for(int j=i;j>0 && copy[j-1] > copy[j];j--)
+		{
+			temp=copy[j-1];
+			copy[j-1]=copy[j];
+			copy[j]=temp;
+
+			itemp=orderofkeys[j-1];
+			orderofkeys[j-1]=orderofkeys[j];
+			orderofkeys[j]=itemp;
+		}
+	}
+	/*keylenghts[i]=j, j is the normalised hamming distance of 2
+	keylengths of length j, the keylength is i+1 as you cant have a keylength of 0;
+	we want a sorted keylengths such that we can both find the smallest hamming
+	distance and get the value of i in a not garbage complexity.
+	we have a copy of keylengths that has been sorted.
+	we need to have an array of indexes of key length (by extension that would be an array of key length values)
+	such that we can read it via keylenghts[oderofkeys[i]]=j
+	so oderofkeys[i]+1 is keylength and j is hopefully the smallest hamming distance
+	go into keylenghts[i], find the index of copy such that copy[j]=keylenghts[i], 
+	orderofkeys[i]=j
+	*/
+	//now if we want to find the keysize with the minimum length
+	//orderofkeys[0]+1 should be the smallest nromalised hamming distance using that keylength
+	for (int i = 0; i < orderofkeys.size(); ++i)
+	{
+		int keyl=orderofkeys[i]+1;
+		std::cout<<keyl<<std::endl;
+		/*
+		break up the cipher text based on the assumed keylength
+		then break using the histogram 	
+		*/
+		std::vector<std::vector<unsigned char> > vecOfChar;
+		/*
+		lets parittion the set of cipher characters
+		based on the position it appears in its sequence
+		if we have a keylength of keyl then
+		cipher[n*keyl+c] where c will be each colmnum
+		and n will be the row, n*keyl<=binaryinput.size()
+		hopefully we should be able to access specifc partitions
+		via vectorOfChar[c][n]
+		*/
+		std::vector<unsigned char> thekey;//will hold the key by the end
+		int c=0;
+		int n=0;
+		std::vector<unsigned char> filler;
+		for (int j = 0; j < keyl; ++j)
+		{
+			//push the keylengths worth of vectors (set up coloums of vecOfChar)
+			vecOfChar.push_back(filler);
+		}
+		for (int j = 0; j < binaryinput.size(); ++j)
+		{
+			vecOfChar[j%keyl].push_back(binaryinput[j]);
+		}
+		for (int j = 0; j < vecOfChar.size(); ++j)
+		{
+			for (int k = 0; k < vecOfChar[j].size(); ++k)
+			{
+				std::cout<<vecOfChar[j][k];
+			}
+		}
+		std::cout<<""<<std::endl;
+		//now each vecOfChar is i%keyl long o vecOfChar[1][1] is binaryinput[keyl+1]
+		//solve for each column
+		std::vector<std::vector<unsigned char> > solution=vecOfChar;
+		for (int j = 0; j < solution.size(); ++j)
+		{
+			solution[j]=BreakSingleByteXor(vecOfChar[j],histo);
+		}
+		//for now lets just print the solution
 		
 	}
 }
-
 
 /*
 Base 64 Index table:
