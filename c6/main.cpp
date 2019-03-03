@@ -20,7 +20,7 @@ int main()
 	}
 	//input is in base64
 	std::vector<unsigned char> binary=base2byte(cipher);
-	std::vector<unsigned char> testrepeatedkey=string2vector("Cooking mc's like a pound if bacon, ice ice baby ice ice, corey Noden aint got no nodens");
+	std::vector<unsigned char> testrepeatedkey=string2vector("Cooking mc's like a pound ");
 	testrepeatedkey=binxor(testrepeatedkey,'2');
 	std::vector<unsigned char> sol=BreakSingleByteXor(testrepeatedkey,histo);
 	std::cout<<"HERE IS THE ANSWER"<<std::endl;
