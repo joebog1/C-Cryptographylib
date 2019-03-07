@@ -358,7 +358,6 @@ std::vector<unsigned char> threebinarydigitstobase(unsigned char a,unsigned char
 	//helper function for byte to base, takes 3 bytes and produces the 4 base 64 digits that equal that number
 	//we cant just convert from unsigned char to int as the binary for b starts at 2^8 but will be read as 2^0, giving wrong result
 	//INPUT MUST BE IN BYTE DECNDING ORDER, ABC
-	//C is done automaticaly
 	int decimal=int(c);
 	//B starts at 2^8
 	int conversionmule=int(b);
@@ -824,26 +823,45 @@ double histodifference(std::vector<unsigned char> decodedmsg,histogram histo)//c
 	}
 	//now that we are convinced that they are of the same size
 	//we can check element by element
+	print(histo.characterlist);
+	print(decrypt.characterlist);
 	for (int i = 0; i <histo.nfreq.size() ; ++i)
 	{
 		//c++ doesnt like abs when the inputs are doubles for some reason
 		double sum=0;
-		if (histo.characterlist[i]!=decrypt.characterlist[i])
+		if (histo.characterlist[i]==decrypt.characterlist[i])
 		{
 			if (histo.nfreq[i]>decrypt.nfreq[i])
 			{
 				sum=histo.nfreq[i]-decrypt.nfreq[i];
-				sum*=i;
+
 			}
 			else
 			{
 				sum=decrypt.nfreq[i]-histo.nfreq[i];
-				sum*=i;
 			}
-			ans=ans+sum;
+			ans=ans+sum*i;//reward more when more common characters match
+		}
+		else
+		{
+			//punish incorrect results
+			if (histo.nfreq[i]>decrypt.nfreq[i])
+			{
+				sum=histo.nfreq[i]-decrypt.nfreq[i];
+
+			}
+			else
+			{
+				sum=decrypt.nfreq[i]-histo.nfreq[i];
+			}
+			ans=ans-sum;
 		}
 	}
-	return ans;
+	if (ans<=0)
+	{
+		return 100;
+	}
+	return 1/ans;
 }
 
 std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,histogram histo)
@@ -865,8 +883,9 @@ std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,
 		{
 			solved[j]=solved[j]^key;
 		}
+		std::cout<<"Possiable key > "<<key<<std::endl<<"Possiable plaintext:"<<std::endl;
 		print(solved);
-		std::cout<<histodifference(solved,histo)<<std::endl;
+		std::cout<<"the histodifference is = "<<histodifference(solved,histo)<<std::endl;
 		hacc.push_back(histodifference(solved,histo));
 	}
 	//find the result that gave the closest histogtam and use that
@@ -882,6 +901,7 @@ std::vector<unsigned char> BreakSingleByteXor(std::vector<unsigned char> cipher,
 	}
 	//could be improved for perfomanace and readability but good enough for a first attempt
 	key=cipherhisto.characterlist[cipherhisto.characterlist.size()-1-index]^histo.characterlist[histo.characterlist.size()-1-index];
+	std::cout<<key<<std::endl;
 	for (int j = 0; j < solved.size(); ++j)
 	{
 		solved[j]=solved[j]^key;
@@ -932,7 +952,9 @@ std::vector<unsigned char> BreakRepeatedKeyXor(std::vector<unsigned char> binary
 	for (int i = 0; i < orderofkeys.size(); ++i)
 	{
 		int keyl=orderofkeys[i]+1;
-		std::cout<<keyl<<std::endl;
+		std::cout<<keyl<<std::endl<<"Here is Input: "<<std::endl;
+		print(binaryinput);	
+		std::cout<<"we assume a key length of "<<keyl<<std::endl;
 		/*
 		break up the cipher text based on the assumed keylength
 		then break using the histogram 	
@@ -948,8 +970,6 @@ std::vector<unsigned char> BreakRepeatedKeyXor(std::vector<unsigned char> binary
 		via vectorOfChar[c][n]
 		*/
 		std::vector<unsigned char> thekey;//will hold the key by the end
-		int c=0;
-		int n=0;
 		std::vector<unsigned char> filler;
 		for (int j = 0; j < keyl; ++j)
 		{
@@ -960,23 +980,39 @@ std::vector<unsigned char> BreakRepeatedKeyXor(std::vector<unsigned char> binary
 		{
 			vecOfChar[j%keyl].push_back(binaryinput[j]);
 		}
+		std::cout<<"OUTPUT THE FIRST ROW"<<std::endl;
 		for (int j = 0; j < vecOfChar.size(); ++j)
 		{
 			for (int k = 0; k < vecOfChar[j].size(); ++k)
 			{
-				std::cout<<vecOfChar[j][k];
+				std::cout<<vecOfChar[j][k]<<" ";
 			}
+			std::cout<<""<<std::endl<<"ROW IS COMPLETE"<<std::endl;
 		}
-		std::cout<<""<<std::endl;
 		//now each vecOfChar is i%keyl long o vecOfChar[1][1] is binaryinput[keyl+1]
 		//solve for each column
-		std::vector<std::vector<unsigned char> > solution=vecOfChar;
-		for (int j = 0; j < solution.size(); ++j)
+		for (int j = 0; j < vecOfChar.size(); ++j)
 		{
-			solution[j]=BreakSingleByteXor(vecOfChar[j],histo);
+			vecOfChar[j]=BreakSingleByteXor(vecOfChar[j],histo);
 		}
 		//for now lets just print the solution
-		
+		std::vector<unsigned char> possolution;
+		//we understand that the vector of chars is a 2d jagged matrix of characters
+		//to go back we traverse the list from top to bottom, left to right
+		int counter=0;
+		for (int j = 0; j < vecOfChar[0].size(); ++j)
+		{
+			for (int k = 0; k < vecOfChar.size(); ++k)
+			{
+				//iterate such that it returns the orgional vector
+				if (counter<binaryinput.size())
+				{
+					possolution.push_back(vecOfChar[j][k]);
+				}
+				counter++;
+			}
+		}
+		return possolution;
 	}
 }
 
